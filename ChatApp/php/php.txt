@@ -1,0 +1,75 @@
+<?php
+session_start();
+include_once "config.php";
+$fname = mysqli_real_escape_string($conn, $_POST['fname']);
+$lname = mysqli_real_escape_string($conn, $_POST['lname']);
+$email = mysqli_real_escape_string($conn, $_POST['email']);
+$pws   = mysqli_real_escape_string($conn, $_POST['pws']);
+
+
+if(!empty($fname) && !empty($lname) && !empty($email) && !empty($pws)){
+    // user email valid or not valid
+   if(filter_var($email, FILTER_VALIDATE_EMAIL)){
+    //Email exit on data base checking
+      $sql = mysqli_query($conn, "SELECT * email FROM userdata WHERE  email = '{$email}'");
+    
+      if(mysqli_num_rows($sql)>0){ // if email exist check
+          echo "Already email exist!";
+      }else{
+        //check upload file or not
+        if(isset($_FILES['image'])){
+            $img_name = $_FILES['image'] ['name']; //getting user upload image name
+            $img_type = $_FILES['image'] ['type'];  //getting user upload image type
+            $tmp_name = $_FILES['image'] ['tmp_name']; //this is temporary name used save
+
+          //let's check the image file 
+          $img_expload = explode('.', $img_name);
+          $img_ext = end($img_expload); //we get the extention
+
+          $extention = ['png', 'jpg', 'jpeg'];
+          if(in_array($img_ext, $extention)===ture){
+             $time = time();//this will be return us current time
+
+             $new_img_name = $time.$img_name;
+             
+             
+             if(move_uploaded_file($tmp_name, "image/".$new_img_name)){//user upload file move on our folder
+                $random_id = rand(time(), 10000000);
+                $status + "Active now"; //once user signup then this is show will be active now
+                $encrypte_pass = md5($pws);//this is for encrypted pass cz user can some security
+
+
+                //insert user all data inside table 
+                $insert_query = mysqli_query($conn, "INSERT INTO userdata(userId, UniqueId, fname, lname, email, password, image, status)
+                              VALUES ({$random_id}, '{$fname}', '{$lname}', '{$email}', '{$pws}', '{$new_img_name}', '{$status}')");
+
+               if($insert_query){//thease data are inserted 
+                    $Select_query = mysqli_query($conn, "SELECT * FROM userdata WHERE email = '{$email}'")
+                    if(mysqli_num_rows($Select_query)>0){
+                      $result = mysqli_fetch_assoc($Select_query);
+                      $_SESSION['UniqueId'] = $result['UniqueId'];
+                      echo "Success";
+                    }else{
+                      echo "This is email address doesn't exits.!";
+                    }
+                 
+                }else{
+                  echo "Something went wrong!";
+               }    
+
+            }
+          }else{
+            echo "Please select an image file jpg,png & jpeg!";
+          }
+
+        }else{
+            echo "Please select an image";
+        }
+      }
+   }else{
+    echo "$email this is not valid email.";
+   }
+}else{
+    echo "All input filed are required";
+}
+?>
